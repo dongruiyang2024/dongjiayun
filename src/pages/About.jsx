@@ -1,3 +1,5 @@
+import rabbitAvatar from '../assets/rabbit-avatar.svg';
+
 export default function About() {
   return (
     <main className="about-page">
@@ -8,7 +10,7 @@ export default function About() {
 
       <div className="about-container">
         <div className="about-profile">
-          <div className="about-avatar-big">🌸</div>
+          <img src={rabbitAvatar} alt="不不的头像" className="about-avatar-big" />
           <h2>不不</h2>
           <p className="about-tagline">三年级 · 爱笑的女生 · 小小梦想家</p>
         </div>

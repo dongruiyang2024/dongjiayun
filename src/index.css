@@ -265,6 +265,15 @@ ul, ol { list-style: none; }
   margin-bottom: 1rem;
 }
 
+.hero-avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 3px solid var(--pink);
+  margin-bottom: 1rem;
+  animation: floaty 3s ease-in-out infinite;
+}
+
 @keyframes wave {
   0%, 100% { transform: rotate(0deg); }
   25% { transform: rotate(20deg); }
@@ -1134,16 +1143,13 @@ ul, ol { list-style: none; }
 }
 
 .about-avatar-big {
-  width: 100px;
-  height: 100px;
-  font-size: 3.5rem;
-  background: linear-gradient(135deg, var(--pink-light), var(--purple-light));
+  width: 120px;
+  height: 120px;
   border: 3px solid var(--pink);
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  object-fit: cover;
   margin: 0 auto 1rem;
+  display: block;
   animation: floaty 3s ease-in-out infinite;
 }
 

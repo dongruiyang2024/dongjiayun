@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import posts from '../data/posts';
+import rabbitAvatar from '../assets/rabbit-avatar.svg';
 
 export default function Home() {
   const latestPosts = posts.slice(0, 3);
@@ -16,7 +17,7 @@ export default function Home() {
           <span className="float-item" style={{ '--delay': '3s', '--x': '90%', '--y': '50%' }}>💖</span>
         </div>
         <div className="hero-content">
-          <div className="hero-wave">👋</div>
+          <img src={rabbitAvatar} alt="不不的头像" className="hero-avatar" />
           <h1 className="hero-title">
             欢迎来到<br />
             <span className="hero-highlight">不不的成长花园</span>
