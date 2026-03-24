@@ -1,9 +1,17 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import posts from '../data/posts';
+import { api } from '../lib/api';
+import staticPosts from '../data/posts';
 import rabbitAvatar from '../assets/rabbit-avatar.svg';
 
 export default function Home() {
-  const latestPosts = posts.slice(0, 3);
+  const [latestPosts, setLatestPosts] = useState(staticPosts.slice(0, 3));
+
+  useEffect(() => {
+    api.posts.list()
+      .then((posts) => setLatestPosts(posts.slice(0, 3)))
+      .catch(() => {});
+  }, []);
 
   return (
     <main className="home">

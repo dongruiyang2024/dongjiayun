@@ -1,5 +1,15 @@
 {
   "name": "dongjiayun",
   "pages_build_output_dir": "dist",
-  "compatibility_date": "2026-03-15"
+  "compatibility_date": "2026-03-15",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "dongjiayun-db",
+      "database_id": "REPLACE_WITH_YOUR_DATABASE_ID"
+    }
+  ],
+  "vars": {
+    "ADMIN_KEY": "REPLACE_WITH_YOUR_ADMIN_KEY"
+  }
 }

@@ -1,10 +1,20 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import PostCard from '../components/PostCard';
-import posts, { categories } from '../data/posts';
+import { api } from '../lib/api';
+import staticPosts, { categories } from '../data/posts';
 
 export default function Diary() {
+  const [posts, setPosts] = useState(staticPosts);
+  const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('全部');
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    api.posts.list()
+      .then(setPosts)
+      .catch(() => setPosts(staticPosts))
+      .finally(() => setLoading(false));
+  }, []);
 
   const filteredPosts = useMemo(() => {
     return posts.filter((post) => {
@@ -15,7 +25,7 @@ export default function Diary() {
         post.excerpt.includes(searchQuery);
       return matchesCategory && matchesSearch;
     });
-  }, [activeCategory, searchQuery]);
+  }, [posts, activeCategory, searchQuery]);
 
   return (
     <main className="diary-page">
@@ -49,7 +59,12 @@ export default function Diary() {
         </div>
       </div>
 
-      {filteredPosts.length === 0 ? (
+      {loading ? (
+        <div className="loading-state">
+          <span className="loading-icon">🌸</span>
+          <p>加载中...</p>
+        </div>
+      ) : filteredPosts.length === 0 ? (
         <div className="empty-state">
           <span className="empty-icon">🔍</span>
           <p>没有找到相关日记哦～</p>

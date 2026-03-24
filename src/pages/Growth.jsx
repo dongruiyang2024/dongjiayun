@@ -1,6 +1,20 @@
-import { growthTimeline } from '../data/posts';
+import { useState, useEffect } from 'react';
+import { api } from '../lib/api';
+import { growthTimeline as staticTimeline } from '../data/posts';
 
 export default function Growth() {
+  const [milestones, setMilestones] = useState(staticTimeline);
+  const [postCount, setPostCount] = useState(6);
+
+  useEffect(() => {
+    api.milestones.list()
+      .then(setMilestones)
+      .catch(() => {});
+    api.posts.list()
+      .then((posts) => setPostCount(posts.length))
+      .catch(() => {});
+  }, []);
+
   return (
     <main className="growth-page">
       <div className="page-header">
@@ -9,8 +23,8 @@ export default function Growth() {
       </div>
 
       <div className="timeline">
-        {growthTimeline.map((item, index) => (
-          <div key={index} className="timeline-item" style={{ animationDelay: `${index * 0.1}s` }}>
+        {milestones.map((item, index) => (
+          <div key={item.id ?? index} className="timeline-item" style={{ animationDelay: `${index * 0.1}s` }}>
             <div className="timeline-dot">
               <span>{item.icon}</span>
             </div>
@@ -27,7 +41,7 @@ export default function Growth() {
         <h2>📊 我的小数据</h2>
         <div className="stats-grid">
           <div className="stat-card">
-            <span className="stat-number">6</span>
+            <span className="stat-number">{postCount}</span>
             <span className="stat-label">篇日记</span>
             <span className="stat-icon">📝</span>
           </div>

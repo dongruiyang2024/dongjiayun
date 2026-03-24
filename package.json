@@ -5,9 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:api": "wrangler pages dev --proxy 5173 --port 8788",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "db:migrate": "wrangler d1 execute dongjiayun-db --file=migrations/0001_initial.sql",
+    "db:migrate:local": "wrangler d1 execute dongjiayun-db --local --file=migrations/0001_initial.sql"
   },
   "dependencies": {
     "react": "^19.2.0",
@@ -24,6 +27,7 @@
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
     "playwright": "^1.58.2",
-    "vite": "^7.3.1"
+    "vite": "^7.3.1",
+    "wrangler": "^3.0.0"
   }
 }

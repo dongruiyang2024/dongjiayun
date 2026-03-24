@@ -1,22 +1,15 @@
 import { useState, useEffect } from 'react';
+import { api } from '../lib/api';
 
 const AVATARS = ['🐱', '🐶', '🐰', '🐼', '🦊', '🐨', '🐯', '🦁', '🐸', '🐧', '🦄', '🐝', '🦋', '🐬', '🐻'];
 
-function getStorageKey(pageId) {
-  return `guestbook_${pageId}`;
-}
-
-function loadComments(pageId) {
+function loadLocalComments(pageId) {
   try {
-    const data = localStorage.getItem(getStorageKey(pageId));
+    const data = localStorage.getItem(`guestbook_${pageId}`);
     return data ? JSON.parse(data) : [];
   } catch {
     return [];
   }
-}
-
-function saveComments(pageId, comments) {
-  localStorage.setItem(getStorageKey(pageId), JSON.stringify(comments));
 }
 
 export default function CommentSection({ pageId = 'default', title = '留言区' }) {
@@ -26,30 +19,38 @@ export default function CommentSection({ pageId = 'default', title = '留言区'
   const [avatar, setAvatar] = useState(() => AVATARS[Math.floor(Math.random() * AVATARS.length)]);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    setComments(loadComments(pageId));
+    api.comments.list(pageId)
+      .then(setComments)
+      .catch(() => setComments(loadLocalComments(pageId)));
   }, [pageId]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name.trim() || !message.trim()) return;
+    setSubmitting(true);
+    setError('');
 
-    const newComment = {
-      id: Date.now(),
-      name: name.trim(),
-      message: message.trim(),
-      avatar,
-      date: new Date().toISOString(),
-    };
-
-    const updated = [newComment, ...comments];
-    setComments(updated);
-    saveComments(pageId, updated);
-    setName('');
-    setMessage('');
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 3000);
+    try {
+      const newComment = await api.comments.create({
+        pageId,
+        name: name.trim(),
+        avatar,
+        message: message.trim(),
+      });
+      setComments((prev) => [newComment, ...prev]);
+      setName('');
+      setMessage('');
+      setSubmitted(true);
+      setTimeout(() => setSubmitted(false), 3000);
+    } catch (err) {
+      setError(err.message || '提交失败，请稍后再试');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -110,14 +111,19 @@ export default function CommentSection({ pageId = 'default', title = '留言区'
 
         <div className="comment-form-bottom">
           <span className="char-count">{message.length}/500</span>
-          <button type="submit" className="comment-submit">
-            发送留言 ✉️
+          <button type="submit" className="comment-submit" disabled={submitting}>
+            {submitting ? '发送中...' : '发送留言 ✉️'}
           </button>
         </div>
 
         {submitted && (
           <div className="comment-success">
             🎉 留言成功！谢谢你的留言～
+          </div>
+        )}
+        {error && (
+          <div className="comment-error">
+            ⚠️ {error}
           </div>
         )}
       </form>
@@ -137,7 +143,7 @@ export default function CommentSection({ pageId = 'default', title = '留言区'
                 <div className="comment-meta">
                   <span className="comment-author">{c.name}</span>
                   <time className="comment-date">
-                    {new Date(c.date).toLocaleDateString('zh-CN', {
+                    {new Date(c.createdAt || c.date).toLocaleDateString('zh-CN', {
                       month: 'long',
                       day: 'numeric',
                       hour: '2-digit',

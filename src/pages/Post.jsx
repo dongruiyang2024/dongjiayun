@@ -1,23 +1,59 @@
 import { useParams, Link, Navigate } from 'react-router-dom';
-import { useEffect } from 'react';
-import posts from '../data/posts';
+import { useEffect, useState } from 'react';
+import { api } from '../lib/api';
+import staticPosts from '../data/posts';
 import CommentSection from '../components/CommentSection';
 
 export default function Post() {
   const { id } = useParams();
-  const post = posts.find((p) => p.id === Number(id));
+  const [post, setPost] = useState(null);
+  const [allPosts, setAllPosts] = useState(staticPosts);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    setLoading(true);
+    setNotFound(false);
+
+    Promise.all([
+      api.posts.get(id),
+      api.posts.list(),
+    ])
+      .then(([p, list]) => {
+        setPost(p);
+        setAllPosts(list);
+      })
+      .catch(() => {
+        const found = staticPosts.find((p) => p.id === Number(id));
+        if (found) {
+          setPost(found);
+          setAllPosts(staticPosts);
+        } else {
+          setNotFound(true);
+        }
+      })
+      .finally(() => setLoading(false));
   }, [id]);
 
-  if (!post) {
+  if (loading) {
+    return (
+      <main className="post-page">
+        <div className="loading-state">
+          <span className="loading-icon">🌸</span>
+          <p>加载中...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (notFound || !post) {
     return <Navigate to="/diary" replace />;
   }
 
-  const currentIndex = posts.findIndex((p) => p.id === post.id);
-  const prevPost = posts[currentIndex + 1];
-  const nextPost = posts[currentIndex - 1];
+  const currentIndex = allPosts.findIndex((p) => p.id === post.id);
+  const prevPost = allPosts[currentIndex + 1];
+  const nextPost = allPosts[currentIndex - 1];
 
   const paragraphs = post.content.trim().split('\n\n');
 
@@ -78,8 +114,7 @@ export default function Post() {
 
             return para.split('\n').map((line, j) => {
               if (!line.trim()) return null;
-              const formatted = line
-                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+              const formatted = line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
               return <p key={`${i}-${j}`} dangerouslySetInnerHTML={{ __html: formatted }} />;
             });
           })}
