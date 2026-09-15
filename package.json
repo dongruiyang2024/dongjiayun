@@ -13,9 +13,12 @@
     "db:migrate:local": "wrangler d1 execute dongjiayun-db --local --file=migrations/0001_initial.sql"
   },
   "dependencies": {
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "react-router-dom": "^7.13.1"
+    "@react-three/drei": "^10.7.8",
+    "@react-three/fiber": "^9.7.0",
+    "react": "~19.2.4",
+    "react-dom": "~19.2.4",
+    "react-router-dom": "^7.13.1",
+    "three": "^0.186.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

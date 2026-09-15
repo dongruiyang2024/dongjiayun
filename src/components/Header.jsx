@@ -5,6 +5,7 @@ const navItems = [
   { path: '/', label: '首页', icon: '🏠' },
   { path: '/diary', label: '我的日记', icon: '📝' },
   { path: '/growth', label: '成长足迹', icon: '🌱' },
+  { path: '/explore', label: '探索工坊', icon: '🚀' },
   { path: '/guestbook', label: '留言板', icon: '💌' },
   { path: '/about', label: '关于我', icon: '🧸' },
 ];
@@ -30,7 +31,7 @@ export default function Header() {
             <Link
               key={path}
               to={path}
-              className={`nav-link ${location.pathname === path ? 'active' : ''}`}
+              className={`nav-link ${location.pathname === path || (path === '/explore' && location.pathname.startsWith('/explore/')) ? 'active' : ''}`}
             >
               <span className="nav-icon">{icon}</span>
               {label}
