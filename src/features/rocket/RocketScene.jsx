@@ -5,6 +5,7 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import * as THREE from "three";
 
 const clamp = THREE.MathUtils.clamp;
@@ -17,19 +18,19 @@ const smooth = (a, b, t) => {
 // 离台即有稳定初速（快速离塔），随后加速爬升，燃尽时径向速度归零、
 // 自然转入水平。全部导数解析计算，航向角无差分噪声。
 const LIFTOFF = 9;
-const BURNOUT = 80;
-const STAGE_SEP = 45;
-const FAIRING_SEP = 55;
+const BURNOUT = 95;
+const STAGE_SEP = 60;
+const FAIRING_SEP = 70;
 const TURN_DELAY = 9;
 const ASCENT_SPAN = BURNOUT - LIFTOFF;
-// alt(s) = ALT_SCALE * (smoothstep((s+8)/79) - ALT_BASE)
-const ALT_BASE = 0.028687;
+// alt(s) = ALT_SCALE * (smoothstep((s+8)/94) - ALT_BASE)
+const ALT_BASE = 0.020497;
 const ALT_SCALE = 122 / (1 - ALT_BASE);
 const posAt = (s) => {
-  const p = clamp((s + 8) / 79, 0, 1);
+  const p = clamp((s + 8) / 94, 0, 1);
   const altitude = ALT_SCALE * (p * p * (3 - 2 * p) - ALT_BASE);
   const turn = Math.max(0, s - TURN_DELAY);
-  const angle = 3.57e-6 * turn * turn * turn;
+  const angle = 1.862e-6 * turn * turn * turn;
   const radius = 182 + altitude;
   return {
     angle,
@@ -37,8 +38,8 @@ const posAt = (s) => {
     x: Math.sin(angle) * radius,
     y: Math.cos(angle) * radius - 182,
     // 解析导数：径向/切向速度分量
-    dRadius: ALT_SCALE * (6 * p * (1 - p)) / 79,
-    dAngle: 1.071e-5 * turn * turn,
+    dRadius: ALT_SCALE * (6 * p * (1 - p)) / 94,
+    dAngle: 5.586e-6 * turn * turn,
   };
 };
 const flight = (time) => {
@@ -167,7 +168,7 @@ function Rocket({ time }) {
       booster.current.rotation.x = dt * 0.2;
       booster.current.visible = dt < 15;
     }
-    body.current.visible = t < 132;
+    body.current.visible = t < 165;
     // 点火后、离台前的振动：推力建立时箭体在台上轻微抖动
     const rumble = smooth(7, 7.6, t) * (1 - smooth(8.6, 10.5, t));
     body.current.position.x = rumble * 0.02 * Math.sin(t * 87);
@@ -186,7 +187,13 @@ function Rocket({ time }) {
     flame.current.position.y = t < STAGE_SEP ? -0.4 : 5.6;
     const throttle = t < 9 ? smooth(7, 8.2, t) : 1;
     const flicker = 1 + 0.05 * Math.sin(t * 31) + 0.03 * Math.sin(t * 47.3);
-    flame.current.scale.set(throttle * flicker, throttle * (1 + 0.09 * Math.sin(t * 23)), throttle * flicker);
+    // 高空大气稀薄，尾焰逐渐膨胀变宽（真空膨胀）
+    const expansion = 1 + smooth(30, 75, t) * 0.85;
+    flame.current.scale.set(
+      throttle * flicker * expansion,
+      throttle * (1 + 0.09 * Math.sin(t * 23)),
+      throttle * flicker * expansion,
+    );
     flame.current.children.forEach((child) => {
       if (child.isPointLight) child.intensity = 120 * throttle * flicker;
     });
@@ -486,8 +493,36 @@ function LaunchSite({ time }) {
     </group>
   );
 }
+// 爬升段凝结尾迹：粒子沿已飞过的轨迹生成，随时间扩散消散
+function Contrail({ time }) {
+  const group = useRef();
+  useFrame(() => {
+    const t = time.current.time;
+    group.current.children.forEach((m, i) => {
+      const spawn = 10 + i * 0.45;
+      const age = t - spawn;
+      m.visible = age > 0 && spawn < 52 && age < 10;
+      if (!m.visible) return;
+      const p = flight(Math.min(spawn, t));
+      const w = Math.min(1, age / 10);
+      m.position.set(p.x, p.y - w * 1.5, 0);
+      m.scale.setScalar(0.5 + w * 3.4);
+      m.material.opacity = (1 - w) * 0.26 * smooth(10, 14, spawn);
+    });
+  });
+  return (
+    <group ref={group}>
+      {Array.from({ length: 94 }, (_, i) => (
+        <mesh key={i}>
+          <sphereGeometry args={[1, 12, 10]} />
+          <meshStandardMaterial color="#e9edee" transparent depthWrite={false} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
 // 入轨拉远完成后把相机交给用户：拖动环绕地球与卫星，滚轮缩放
-const FREE_VIEW_TIME = 100;
+const FREE_VIEW_TIME = 112;
 function FreeViewControls({ clockRef }) {
   const controls = useRef();
   useFrame(() => {
@@ -526,18 +561,18 @@ function World({ clockRef }) {
       p = flight(t);
     rocket.current.position.set(p.x, p.y, 0);
     rocket.current.rotation.z = -p.heading;
-    const release = Math.max(0, t - 80);
+    const release = Math.max(0, t - 95);
     // Preserve the payload's world position at release, then coast along its orbit.
-    const releasePose = flight(80);
+    const releasePose = flight(95);
     const releaseX = releasePose.x + Math.sin(releasePose.heading) * 9.1;
     const releaseY = releasePose.y + 182 + Math.cos(releasePose.heading) * 9.1;
     const a = Math.atan2(releaseX, releaseY) + release * 0.031;
-    const r = Math.hypot(releaseX, releaseY) + smooth(80, 90, t) * 2;
-    sat.current.visible = t >= 80;
+    const r = Math.hypot(releaseX, releaseY) + smooth(95, 105, t) * 2;
+    sat.current.visible = t >= 95;
     sat.current.position.set(Math.sin(a) * r, Math.cos(a) * r - 182, 0);
     sat.current.rotation.z = -a;
     sat.current.rotation.y = release * 0.07;
-    sat.current.scale.setScalar(1 + smooth(88, 102, t) * 11);
+    sat.current.scale.setScalar(1 + smooth(98, 112, t) * 11);
     // 地球自转：由任务时间推导，暂停/重置/倍速天然同步
     globe.current.children[0].rotation.y = -1.1 + t * 0.008;
     // 地球从始至终可见：发射台立在地球表面，爬升时地球自然后退、
@@ -550,11 +585,11 @@ function World({ clockRef }) {
     scene.fog.color.copy(sky);
     scene.fog.near = 120 + smooth(10, 32, t) * 1500;
     scene.fog.far = 600 + smooth(10, 32, t) * 1500;
-    orbit.current.visible = t >= 95;
-    orbit.current.material.opacity = smooth(95, 103, t) * 0.4;
+    orbit.current.visible = t >= 108;
+    orbit.current.material.opacity = smooth(108, 116, t) * 0.4;
     // Remain close to the satellite throughout deployment; pull out only after its wings open.
-    const zoom = smooth(88, 98, t);
-    const followSatellite = smooth(80, 83, t);
+    const zoom = smooth(98, 110, t);
+    const followSatellite = smooth(95, 98, t);
     const focusX = THREE.MathUtils.lerp(p.x, Math.sin(a) * r, followSatellite);
     const focusY = THREE.MathUtils.lerp(
       p.y + 5,
@@ -564,10 +599,10 @@ function World({ clockRef }) {
     // 拉远完成后相机交给 OrbitControls，剧本镜头不再接管
     if (t < FREE_VIEW_TIME) {
       target.set(focusX, focusY, 0).lerp(new THREE.Vector3(0, -182, 0), zoom);
-      const d = (1 + smooth(12, 45, t) * 0.3) * (1 - followSatellite * 0.52);
+      const d = (1 + smooth(12, 60, t) * 0.3) * (1 - followSatellite * 0.52);
       // 爬升中后段镜头逐渐抬到火箭上方俯视，地球弧线进入画面；
       // 分离与整流罩阶段保持俯视，能看到一级坠向地面，入轨前恢复平视。
-      const lookdown = smooth(24, 50, t) * (1 - smooth(70, 82, t));
+      const lookdown = smooth(30, 62, t) * (1 - smooth(86, 96, t));
       pos
         .set(
           focusX + THREE.MathUtils.lerp(19, 7, lookdown) * d,
@@ -582,8 +617,8 @@ function World({ clockRef }) {
         );
       // 点火与离台时的镜头震动，随高度增加迅速衰减；一级分离时轻微一震
       const shake =
-        smooth(7, 7.5, t) * (1 - smooth(10, 14, t)) * (t > 80 ? 0 : 1) +
-        0.5 * smooth(45, 45.4, t) * (1 - smooth(46.5, 49, t));
+        smooth(7, 7.5, t) * (1 - smooth(10, 14, t)) * (t > 95 ? 0 : 1) +
+        0.5 * smooth(60, 60.4, t) * (1 - smooth(61.5, 64, t));
       camera.position.set(
         pos.x + 0.22 * shake * Math.sin(t * 61.7),
         pos.y + 0.18 * shake * Math.sin(t * 53.3),
@@ -591,7 +626,7 @@ function World({ clockRef }) {
       );
       camera.lookAt(target);
     }
-    sky.set("#7fa8c2").lerp(new THREE.Color("#030812"), smooth(20, 58, t));
+    sky.set("#7fa8c2").lerp(new THREE.Color("#030812"), smooth(20, 70, t));
     scene.background = sky;
   });
   return (
@@ -641,6 +676,7 @@ function World({ clockRef }) {
       </group>
       <FreeViewControls clockRef={clockRef} />
       <LaunchSite time={clockRef} />
+      <Contrail time={clockRef} />
       <group ref={rocket}>
         <Rocket time={clockRef} />
       </group>
@@ -691,7 +727,7 @@ function DeployedSatellite({ clockRef }) {
       .forEach(
         (wing, i) =>
           (wing.rotation.z =
-            (i ? 1 : -1) * (1 - smooth(82, 89, clockRef.current.time)) * 1.4),
+            (i ? 1 : -1) * (1 - smooth(97, 104, clockRef.current.time)) * 1.4),
       );
   });
   return (
@@ -742,6 +778,10 @@ export default function RocketScene({ clockRef, onCreated }) {
       }}
       onCreated={(state) => {
         state.gl.toneMappingExposure = 0.92;
+        // PBR 环境反射：金属与漆面的高光质感来源
+        const pmrem = new THREE.PMREMGenerator(state.gl);
+        state.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+        state.scene.environmentIntensity = 0.35;
         onCreated?.(state);
       }}
     >

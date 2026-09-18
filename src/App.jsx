@@ -1,5 +1,5 @@
 import { Component, lazy, Suspense } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -48,9 +48,9 @@ function RocketRoute() {
   );
 }
 
-export default function App() {
+function BlogLayout() {
   return (
-    <div className="app">
+    <>
       <Header />
       <Routes>
         <Route path="/" element={<Home />} />
@@ -60,10 +60,21 @@ export default function App() {
         <Route path="/guestbook" element={<Guestbook />} />
         <Route path="/about" element={<About />} />
         <Route path="/admin" element={<Admin />} />
-        <Route path="/explore" element={<RocketRoute />} />
-        <Route path="/explore/rocket" element={<RocketRoute />} />
       </Routes>
       <Footer />
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <div className="app">
+      <Routes>
+        <Route path="/rocket" element={<RocketRoute />} />
+        <Route path="/explore" element={<Navigate to="/rocket" replace />} />
+        <Route path="/explore/rocket" element={<Navigate to="/rocket" replace />} />
+        <Route path="/*" element={<BlogLayout />} />
+      </Routes>
     </div>
   );
 }

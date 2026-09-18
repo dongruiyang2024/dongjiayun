@@ -64,13 +64,13 @@ export default function RocketLab() {
           ? "升空"
           : null;
   const altitude =
-    time < 9 ? 0 : Math.round(400 * Math.min(1, ((time - 9) / 71) ** 1.5));
+    time < 9 ? 0 : Math.round(400 * Math.min(1, ((time - 9) / 86) ** 1.5));
   return (
     <main className="rocket-lab">
       <div className="rocket-topline">
-        <Link to="/explore">← 探索工坊</Link>
+        <Link to="/">← 返回首页</Link>
         <span>
-          ORBITAL / 01 <i /> 实时三维演示
+          启明星一号 <i /> 实时三维任务演示
         </span>
       </div>
       <header className="rocket-heading">
@@ -117,7 +117,7 @@ export default function RocketLab() {
             {countdownLabel}
           </div>
         )}
-        {time >= 100 && (
+        {time >= 112 && (
           <div className="rocket-orbit-hint">拖动旋转视角 · 滚动缩放 · 近距离观察卫星</div>
         )}
         <div className="rocket-telemetry">
@@ -196,7 +196,7 @@ export default function RocketLab() {
           ))}
         </div>
         <div className="rocket-timer" aria-label="演示时间">
-          {clockLabel(time)} <span>{time >= 120 ? "在轨持续运行" : "/ 02:00"}</span>
+          {clockLabel(time)} <span>{time >= 150 ? "在轨持续运行" : "/ 02:30"}</span>
         </div>
       </section>
       <nav className="rocket-phases" aria-label="发射阶段">
@@ -220,7 +220,7 @@ export default function RocketLab() {
       </nav>
       <footer className="rocket-footnote">
         <span>点击任一阶段，暂停观察关键瞬间。</span>
-        <span>两级运载火箭 · 卫星入轨任务 · DEMO 01</span>
+        <span>两级运载火箭 · 卫星入轨任务</span>
       </footer>
     </main>
   );

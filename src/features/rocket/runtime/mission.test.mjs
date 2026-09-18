@@ -15,7 +15,7 @@ test('orbital motion continues after the presentation reaches its duration', () 
   assert.equal(state.phase.id, 'orbit');
   assert.equal(state.progress, 1);
   assert.equal(state.phaseProgress, 1);
-  assert.equal(state.orbitTime, 90);
+  assert.equal(state.orbitTime, 75);
 });
 
 test('paused clocks freeze; elapsed seconds and speed determine running time', () => {

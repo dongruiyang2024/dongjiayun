@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 const navItems = [
   { path: '/', label: '首页', icon: '🏠' },
   { path: '/diary', label: '我的日记', icon: '📝' },
   { path: '/growth', label: '成长足迹', icon: '🌱' },
-  { path: '/explore', label: '探索工坊', icon: '🚀' },
+  { path: '/rocket', label: '火箭发射', icon: '🚀' },
   { path: '/guestbook', label: '留言板', icon: '💌' },
   { path: '/about', label: '关于我', icon: '🧸' },
 ];
@@ -13,10 +13,6 @@ const navItems = [
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
-
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [location]);
 
   return (
     <header className="header">
@@ -31,7 +27,8 @@ export default function Header() {
             <Link
               key={path}
               to={path}
-              className={`nav-link ${location.pathname === path || (path === '/explore' && location.pathname.startsWith('/explore/')) ? 'active' : ''}`}
+              onClick={() => setMenuOpen(false)}
+              className={`nav-link ${location.pathname === path ? 'active' : ''}`}
             >
               <span className="nav-icon">{icon}</span>
               {label}
