@@ -19,9 +19,10 @@ export async function onRequestPost({ request, env }) {
     return Response.json({ error: '请求格式错误' }, { status: 400 });
   }
 
-  const { title, emoji = '📝', excerpt = '', content, date, category = '生活趣事', mood = '开心', moodEmoji = '😊' } = body;
+  const { title, emoji = '📝', excerpt = '', content, date, category = '生活趣事', mood = '开心', moodEmoji = '😊' } = body ?? {};
 
-  if (!title || !content || !date) {
+  if (![title, content, date].every((value) => typeof value === 'string' && value.trim()) ||
+      ![emoji, excerpt, category, mood, moodEmoji].every((value) => typeof value === 'string')) {
     return Response.json({ error: '标题、内容和日期为必填项' }, { status: 400 });
   }
 

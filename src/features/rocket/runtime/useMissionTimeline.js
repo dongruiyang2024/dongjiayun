@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { advanceMissionClock, assertMissionTime, getMissionState } from './mission';
+import { advanceMissionStep, getMissionState, MISSION_PHASES } from './mission';
 
-const initialClock = () => ({ time: 0, playing: false, speed: 1 });
+const initialClock = () => ({ time: 0, playing: false, speed: 1, awaitingCommand: true });
 const describeClock = (clock) => ({ ...clock, ...getMissionState(clock.time) });
 
 /** A single RAF clock drives the scene; React receives only a 10 Hz UI snapshot. */
@@ -25,7 +25,10 @@ export function useMissionTimeline() {
       previousFrameRef.current = now;
       // Hidden tabs are suspended, so returning cannot skip the launch sequence.
       if (previous !== null && !document.hidden) {
-        clockRef.current.time = advanceMissionClock(clockRef.current, (now - previous) / 1000);
+        const next = advanceMissionStep(clockRef.current, (now - previous) / 1000);
+        const stopped = clockRef.current.playing && !next.playing;
+        clockRef.current = next;
+        if (stopped) publish();
       }
       const phase = getMissionState(clockRef.current.time).phase.id;
       if (phase !== previousPhase) {
@@ -48,13 +51,6 @@ export function useMissionTimeline() {
     };
   }, [publish]);
 
-  const start = useCallback(() => {
-    clockRef.current.time = 0;
-    clockRef.current.playing = true;
-    previousFrameRef.current = null;
-    logAction('start');
-    publish();
-  }, [logAction, publish]);
   const pause = useCallback(() => {
     clockRef.current.playing = false;
     logAction('pause');
@@ -62,6 +58,7 @@ export function useMissionTimeline() {
   }, [logAction, publish]);
   const resume = useCallback(() => {
     clockRef.current.playing = true;
+    clockRef.current.awaitingCommand = false;
     previousFrameRef.current = null;
     logAction('resume');
     publish();
@@ -79,13 +76,15 @@ export function useMissionTimeline() {
     logAction('speed');
     publish();
   }, [logAction, publish]);
-  const seek = useCallback((time) => {
-    assertMissionTime(time);
-    clockRef.current.time = time;
+  const replayPhase = useCallback((phaseIndex) => {
+    if (!Number.isInteger(phaseIndex) || phaseIndex < 0 || phaseIndex >= getMissionState(clockRef.current.time).phaseIndex) return;
+    clockRef.current.time = MISSION_PHASES[phaseIndex].start;
+    clockRef.current.playing = true;
+    clockRef.current.awaitingCommand = false;
     previousFrameRef.current = null;
-    logAction('seek');
+    logAction('replay');
     publish();
   }, [logAction, publish]);
 
-  return { clockRef, snapshot, start, pause, resume, reset, setSpeed, seek };
+  return { clockRef, snapshot, pause, resume, reset, setSpeed, replayPhase };
 }

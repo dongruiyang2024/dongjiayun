@@ -1,6 +1,9 @@
-const { chromium } = require('playwright');
-const fs = require('fs');
-const path = require('path');
+import { chromium } from 'playwright';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 async function takeScreenshots() {
   const screenshotsDir = path.join(__dirname, 'screenshots');

@@ -1,6 +1,10 @@
+import { Link } from 'react-router-dom';
+import { useGarden, currentStage } from '../lib/garden';
 import rabbitAvatar from '../assets/rabbit-avatar.svg';
 
 export default function About() {
+  const { garden } = useGarden();
+  const stage = currentStage(garden?.stages || []);
   return (
     <main className="about-page">
       <div className="page-header">
@@ -12,15 +16,14 @@ export default function About() {
         <div className="about-profile">
           <img src={rabbitAvatar} alt="不不的头像" className="about-avatar-big" />
           <h2>不不</h2>
-          <p className="about-tagline">三年级 · 爱笑的女生 · 小小梦想家</p>
+          <p className="about-tagline">{stage?.label || '成长中'} · 爱记录 · 爱探索</p>
         </div>
 
         <div className="about-sections">
           <section className="about-card-section">
             <h3>👋 自我介绍</h3>
             <p>
-              大家好呀！我是不不，今年9岁，是一个三年级的小学生。
-              我是一个爱笑、爱学习、爱交朋友的女孩子！
+              大家好呀！我是不不。{garden?.intro}
             </p>
             <p>
               创建这个博客是因为我想记录自己成长的每一天，
@@ -35,8 +38,8 @@ export default function About() {
               {[
                 { emoji: '📚', name: '读书', desc: '最爱看童话故事和科普书' },
                 { emoji: '🎨', name: '画画', desc: '水彩画和手账是我的最爱' },
-                { emoji: '🎹', name: '弹钢琴', desc: '已经过了四级啦！' },
-                { emoji: '🚲', name: '骑自行车', desc: '刚刚学会，超级兴奋' },
+                { emoji: '🎹', name: '弹钢琴', desc: '用音乐记录心情' },
+                { emoji: '🚲', name: '骑自行车', desc: '享受迎着风出发' },
                 { emoji: '🧁', name: '做手工', desc: '喜欢折纸和做卡片' },
                 { emoji: '🌻', name: '种花', desc: '阳台上有我的小花园' },
               ].map(({ emoji, name, desc }) => (
@@ -50,25 +53,7 @@ export default function About() {
           </section>
 
           <section className="about-card-section">
-            <h3>🎯 我的小目标</h3>
-            <div className="goal-list">
-              {[
-                { text: '每周写2篇日记', progress: 80 },
-                { text: '今年读完20本课外书', progress: 50 },
-                { text: '钢琴过五级', progress: 30 },
-                { text: '学会游泳', progress: 10 },
-              ].map(({ text, progress }) => (
-                <div key={text} className="goal-item">
-                  <div className="goal-text">
-                    <span>{text}</span>
-                    <span className="goal-percent">{progress}%</span>
-                  </div>
-                  <div className="goal-bar">
-                    <div className="goal-fill" style={{ width: `${progress}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
+            <h3>🌱 我正在经历的成长阶段</h3><p>{stage?.label} · {stage?.theme}</p><p>我的兴趣会变化，想学会的事情也会越来越多。每个学年都有自己的主题，每个项目都记录真实的进度。</p><Link to="/growth" className="see-all">看成长足迹 →</Link><br /><Link to="/projects" className="see-all">看正在探索的项目 →</Link>
           </section>
 
           <section className="about-card-section">
@@ -88,7 +73,7 @@ export default function About() {
               </p>
               <p className="letter-sign">
                 爱你的不不 🌸<br />
-                2026年2月
+                写给每一个来做客的你
               </p>
             </div>
           </section>

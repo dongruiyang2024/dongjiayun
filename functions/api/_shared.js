@@ -1,7 +1,11 @@
+export function hasAdminKey(env) {
+  return typeof env.ADMIN_KEY === 'string' && env.ADMIN_KEY.length > 0 && !env.ADMIN_KEY.startsWith('REPLACE_');
+}
+
 export function checkAdmin(request, env) {
   const auth = request.headers.get('Authorization') || '';
   const key = env.ADMIN_KEY || '';
-  return Boolean(key && auth === `Bearer ${key}`);
+  return hasAdminKey(env) && auth === `Bearer ${key}`;
 }
 
 export function mapPost(p) {

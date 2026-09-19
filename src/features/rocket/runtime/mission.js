@@ -39,3 +39,14 @@ export function advanceMissionClock(clock, elapsedSeconds) {
   }
   return clock.playing ? clock.time + elapsedSeconds * clock.speed : clock.time;
 }
+
+/** Run one commanded phase, stopping exactly before the next action. */
+export function advanceMissionStep(clock, elapsedSeconds) {
+  const nextTime = advanceMissionClock(clock, elapsedSeconds);
+  if (!clock.playing) return clock;
+  const { phase, phaseIndex } = getMissionState(clock.time);
+  if (phaseIndex < MISSION_PHASES.length - 1 && nextTime >= phase.end) {
+    return { ...clock, time: phase.end, playing: false, awaitingCommand: true };
+  }
+  return { ...clock, time: nextTime };
+}

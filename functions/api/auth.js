@@ -1,4 +1,9 @@
+import { hasAdminKey } from './_shared.js';
+
 export async function onRequestPost({ request, env }) {
+  if (!hasAdminKey(env)) {
+    return Response.json({ error: '管理员登录尚未配置' }, { status: 503 });
+  }
   try {
     const { key } = await request.json();
     if (key && key === env.ADMIN_KEY) {

@@ -1,39 +1,39 @@
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
-import staticPosts from '../data/posts';
 import CommentSection from '../components/CommentSection';
 
 export default function Post() {
   const { id } = useParams();
   const [post, setPost] = useState(null);
-  const [allPosts, setAllPosts] = useState(staticPosts);
+  const [allPosts, setAllPosts] = useState([]);
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
+    let active = true;
     window.scrollTo(0, 0);
-    setLoading(true);
-    setNotFound(false);
 
     Promise.all([
       api.posts.get(id),
-      api.posts.list(),
+      api.posts.list().catch(() => []),
     ])
       .then(([p, list]) => {
+        if (!active) return;
         setPost(p);
         setAllPosts(list);
       })
-      .catch(() => {
-        const found = staticPosts.find((p) => p.id === Number(id));
-        if (found) {
-          setPost(found);
-          setAllPosts(staticPosts);
-        } else {
+      .catch((err) => {
+        if (!active) return;
+        if (err.status === 404) {
           setNotFound(true);
+        } else {
+          setError(err.message);
         }
       })
-      .finally(() => setLoading(false));
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, [id]);
 
   if (loading) {
@@ -45,6 +45,10 @@ export default function Post() {
         </div>
       </main>
     );
+  }
+
+  if (error) {
+    return <main className="post-page"><p role="alert" className="comment-error">日记加载失败：{error}</p></main>;
   }
 
   if (notFound || !post) {
@@ -114,8 +118,11 @@ export default function Post() {
 
             return para.split('\n').map((line, j) => {
               if (!line.trim()) return null;
-              const formatted = line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-              return <p key={`${i}-${j}`} dangerouslySetInnerHTML={{ __html: formatted }} />;
+              return <p key={`${i}-${j}`}>{line.split(/(\*\*.+?\*\*)/g).map((part, k) => (
+                part.startsWith('**') && part.endsWith('**')
+                  ? <strong key={k}>{part.slice(2, -2)}</strong>
+                  : part
+              ))}</p>;
             });
           })}
         </div>

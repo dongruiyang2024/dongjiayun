@@ -1,10 +1,12 @@
 const BASE = '/api';
 
 async function req(path, options = {}) {
-  const res = await fetch(`${BASE}${path}`, options);
+  const res = await fetch(`${BASE}${path}`, { ...options, signal: options.signal ?? AbortSignal.timeout(15000) });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(err.error || res.statusText);
+    const error = new Error(err.error || res.statusText);
+    error.status = res.status;
+    throw error;
   }
   return res.json();
 }
@@ -21,6 +23,10 @@ function jsonBody(data, key) {
 }
 
 export const api = {
+  garden: {
+    get: () => req('/garden'),
+    save: (data, key) => req('/garden', { method: 'PUT', ...jsonBody(data, key) }),
+  },
   posts: {
     list: () => req('/posts'),
     get: (id) => req(`/posts/${id}`),

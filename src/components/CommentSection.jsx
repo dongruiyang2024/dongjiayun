@@ -3,15 +3,6 @@ import { api } from '../lib/api';
 
 const AVATARS = ['🐱', '🐶', '🐰', '🐼', '🦊', '🐨', '🐯', '🦁', '🐸', '🐧', '🦄', '🐝', '🦋', '🐬', '🐻'];
 
-function loadLocalComments(pageId) {
-  try {
-    const data = localStorage.getItem(`guestbook_${pageId}`);
-    return data ? JSON.parse(data) : [];
-  } catch {
-    return [];
-  }
-}
-
 export default function CommentSection({ pageId = 'default', title = '留言区' }) {
   const [comments, setComments] = useState([]);
   const [name, setName] = useState('');
@@ -21,11 +12,19 @@ export default function CommentSection({ pageId = 'default', title = '留言区'
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [loadError, setLoadError] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let active = true;
+    setComments([]);
+    setLoadError('');
+    setLoading(true);
     api.comments.list(pageId)
-      .then(setComments)
-      .catch(() => setComments(loadLocalComments(pageId)));
+      .then((items) => { if (active) setComments(items); })
+      .catch((err) => { if (active) setLoadError(err.message); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, [pageId]);
 
   const handleSubmit = async (e) => {
@@ -111,7 +110,7 @@ export default function CommentSection({ pageId = 'default', title = '留言区'
 
         <div className="comment-form-bottom">
           <span className="char-count">{message.length}/500</span>
-          <button type="submit" className="comment-submit" disabled={submitting}>
+          <button type="submit" className="comment-submit" disabled={submitting || loading}>
             {submitting ? '发送中...' : '发送留言 ✉️'}
           </button>
         </div>
@@ -129,7 +128,8 @@ export default function CommentSection({ pageId = 'default', title = '留言区'
       </form>
 
       <div className="comment-list">
-        {comments.length === 0 ? (
+        {loadError && <p role="alert" className="comment-error">留言加载失败：{loadError}</p>}
+        {loading ? <p>留言加载中...</p> : comments.length === 0 && !loadError ? (
           <div className="comment-empty">
             <span className="comment-empty-icon">💭</span>
             <p>还没有留言哦～</p>

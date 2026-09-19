@@ -19,9 +19,10 @@ export async function onRequestPost({ request, env }) {
     return Response.json({ error: '请求格式错误' }, { status: 400 });
   }
 
-  const { date, icon = '⭐', title, desc = '', sort_order = 0 } = body;
+  const { date, icon = '⭐', title, desc = '', sort_order = 0 } = body ?? {};
 
-  if (!date || !title) {
+  if (![date, title].every((value) => typeof value === 'string' && value.trim()) ||
+      ![icon, desc].every((value) => typeof value === 'string') || !Number.isSafeInteger(sort_order)) {
     return Response.json({ error: '日期和标题为必填项' }, { status: 400 });
   }
 

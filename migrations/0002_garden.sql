@@ -1,0 +1,4 @@
+CREATE TABLE IF NOT EXISTS garden (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  content TEXT NOT NULL
+);

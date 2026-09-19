@@ -4,15 +4,18 @@ import { Link, useLocation } from 'react-router-dom';
 const navItems = [
   { path: '/', label: '首页', icon: '🏠' },
   { path: '/diary', label: '我的日记', icon: '📝' },
+  { path: '/projects', label: '探索工坊', icon: '🔬' },
   { path: '/growth', label: '成长足迹', icon: '🌱' },
   { path: '/rocket', label: '火箭发射', icon: '🚀' },
+  { path: '/pet', label: '小兔乐园', icon: '🐰' },
   { path: '/guestbook', label: '留言板', icon: '💌' },
   { path: '/about', label: '关于我', icon: '🧸' },
 ];
 
 export default function Header() {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [openLocation, setOpenLocation] = useState(null);
   const location = useLocation();
+  const menuOpen = openLocation === location.key;
 
   return (
     <header className="header">
@@ -27,8 +30,8 @@ export default function Header() {
             <Link
               key={path}
               to={path}
-              onClick={() => setMenuOpen(false)}
-              className={`nav-link ${location.pathname === path ? 'active' : ''}`}
+              onClick={() => setOpenLocation(null)}
+              className={`nav-link ${(location.pathname === path || (path !== '/' && location.pathname.startsWith(`${path}/`))) ? 'active' : ''}`}
             >
               <span className="nav-icon">{icon}</span>
               {label}
@@ -38,7 +41,7 @@ export default function Header() {
 
         <button
           className="menu-toggle"
-          onClick={() => setMenuOpen(!menuOpen)}
+          onClick={() => setOpenLocation(menuOpen ? null : location.key)}
           aria-label="打开菜单"
         >
           <span className={`hamburger ${menuOpen ? 'open' : ''}`} />

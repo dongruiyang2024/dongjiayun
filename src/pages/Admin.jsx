@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api';
 
-const CATEGORIES = ['生活趣事', '学习天地', '兴趣爱好'];
+import { categories } from '../data/posts';
+import GardenEditor from '../components/GardenEditor';
+const CATEGORIES = categories.slice(1);
 const MOODS = [
   { mood: '超级开心', emoji: '😄' },
   { mood: '开心', emoji: '😊' },
@@ -34,7 +36,7 @@ export default function Admin() {
   const [milestones, setMilestones] = useState([]);
   const [comments, setComments] = useState([]);
   const [commentPageId, setCommentPageId] = useState('guestbook');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState('');
 
   const [postForm, setPostForm] = useState(emptyPost);
@@ -55,8 +57,8 @@ export default function Admin() {
       sessionStorage.setItem('adminKey', keyInput);
       setAdminKey(keyInput);
       setAuthError('');
-    } catch {
-      setAuthError('密钥错误，请重试');
+    } catch (err) {
+      setAuthError(err.message);
     }
   };
 
@@ -67,17 +69,16 @@ export default function Admin() {
   };
 
   const loadPosts = useCallback(async () => {
-    setLoading(true);
-    try { setPosts(await api.posts.list()); } catch { }
-    setLoading(false);
+    try { setPosts(await api.posts.list()); } catch (err) { setMsg(`❌ ${err.message}`); }
+    finally { setLoading(false); }
   }, []);
 
   const loadMilestones = useCallback(async () => {
-    try { setMilestones(await api.milestones.list()); } catch { }
+    try { setMilestones(await api.milestones.list()); } catch (err) { setMsg(`❌ ${err.message}`); }
   }, []);
 
   const loadComments = useCallback(async (pageId) => {
-    try { setComments(await api.comments.list(pageId)); } catch { setComments([]); }
+    try { setComments(await api.comments.list(pageId)); } catch (err) { setMsg(`❌ ${err.message}`); }
   }, []);
 
   useEffect(() => {
@@ -85,7 +86,6 @@ export default function Admin() {
     if (tab === 'posts') loadPosts();
     if (tab === 'milestones') loadMilestones();
     if (tab === 'comments') loadComments(commentPageId);
-    if (tab === 'setup') {}
   }, [tab, adminKey, loadPosts, loadMilestones, loadComments, commentPageId]);
 
   // ── POST CRUD ──
@@ -94,10 +94,15 @@ export default function Admin() {
     setEditingPostId(null);
     setShowPostForm(true);
   };
-  const openEditPost = (post) => {
-    setPostForm({ ...post });
-    setEditingPostId(post.id);
-    setShowPostForm(true);
+  const openEditPost = async (post) => {
+    try {
+      const fullPost = await api.posts.get(post.id);
+      setPostForm(fullPost);
+      setEditingPostId(post.id);
+      setShowPostForm(true);
+    } catch (err) {
+      flash(`❌ ${err.message}`);
+    }
   };
   const savePost = async (e) => {
     e.preventDefault();
@@ -206,6 +211,7 @@ export default function Admin() {
 
       <div className="admin-tabs">
         {[
+          { id: 'garden', label: '🌿 学年与探索项目' },
           { id: 'posts', label: '📝 文章管理' },
           { id: 'milestones', label: '🌱 成长足迹' },
           { id: 'comments', label: '💬 留言管理' },
@@ -221,6 +227,7 @@ export default function Admin() {
         ))}
       </div>
 
+      {tab === 'garden' && <GardenEditor adminKey={adminKey} />}
       {/* ── POSTS TAB ── */}
       {tab === 'posts' && (
         <div className="admin-section">
@@ -493,8 +500,8 @@ export default function Admin() {
             <ol className="admin-setup-steps">
               <li>创建 D1 数据库：<code>wrangler d1 create dongjiayun-db</code></li>
               <li>将返回的 <code>database_id</code> 填入 <code>wrangler.json</code></li>
-              <li>运行迁移：<code>wrangler d1 execute dongjiayun-db --file=migrations/0001_initial.sql</code></li>
-              <li>在 Cloudflare 控制台设置环境变量 <code>ADMIN_KEY</code></li>
+              <li>运行迁移：<code>npm run db:migrate</code></li>
+              <li>在 Cloudflare 控制台将 <code>ADMIN_KEY</code> 设置为加密密钥</li>
               <li>部署后点击上方"执行初始化"写入示例数据</li>
             </ol>
           </div>

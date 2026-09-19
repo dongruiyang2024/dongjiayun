@@ -18,9 +18,10 @@ export async function onRequestPut({ params, request, env }) {
     return Response.json({ error: '请求格式错误' }, { status: 400 });
   }
 
-  const { title, emoji, excerpt, content, date, category, mood, moodEmoji } = body;
+  const { title, emoji = '📝', excerpt = '', content, date, category = '生活趣事', mood = '开心', moodEmoji = '😊' } = body ?? {};
 
-  if (!title || !content || !date) {
+  if (![title, content, date].every((value) => typeof value === 'string' && value.trim()) ||
+      ![emoji, excerpt, category, mood, moodEmoji].every((value) => typeof value === 'string')) {
     return Response.json({ error: '标题、内容和日期为必填项' }, { status: 400 });
   }
 
@@ -38,7 +39,9 @@ export async function onRequestDelete({ params, request, env }) {
     return Response.json({ error: '未授权' }, { status: 401 });
   }
 
-  await env.DB.prepare('DELETE FROM posts WHERE id = ?').bind(params.id).run();
-  await env.DB.prepare('DELETE FROM comments WHERE page_id = ?').bind(`post-${params.id}`).run();
+  await env.DB.batch([
+    env.DB.prepare('DELETE FROM comments WHERE page_id = ?').bind(`post-${params.id}`),
+    env.DB.prepare('DELETE FROM posts WHERE id = ?').bind(params.id),
+  ]);
   return Response.json({ success: true });
 }

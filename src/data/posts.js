@@ -185,6 +185,6 @@ export const growthTimeline = [
   { date: '2025-06', icon: '🎹', title: '钢琴过了四级', desc: '每天练琴30分钟的回报' },
 ];
 
-export const categories = ['全部', '生活趣事', '学习天地', '兴趣爱好'];
+export const categories = ['全部', '生活趣事', '学习天地', '兴趣爱好', '阅读记录', '研究手记', '活动体验'];
 
 export default posts;

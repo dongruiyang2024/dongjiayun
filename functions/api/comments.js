@@ -19,13 +19,20 @@ export async function onRequestPost({ request, env }) {
     return Response.json({ error: '请求格式错误' }, { status: 400 });
   }
 
-  const { pageId, name, avatar = '🐱', message } = body;
+  const { pageId, name, avatar = '🐱', message } = body ?? {};
 
-  if (!pageId || !name?.trim() || !message?.trim()) {
+  if (typeof pageId !== 'string' || typeof name !== 'string' || typeof message !== 'string' || typeof avatar !== 'string' || !name.trim() || !message.trim()) {
     return Response.json({ error: '参数缺失' }, { status: 400 });
   }
-  if (name.trim().length > 20 || message.trim().length > 500) {
+  if (name.trim().length > 20 || message.trim().length > 500 || avatar.length > 32) {
     return Response.json({ error: '内容超出限制' }, { status: 400 });
+  }
+
+  if (pageId !== 'guestbook') {
+    const match = /^post-([1-9]\d*)$/.exec(pageId);
+    if (!match) return Response.json({ error: '留言页面无效' }, { status: 400 });
+    const post = await env.DB.prepare('SELECT id FROM posts WHERE id = ?').bind(match[1]).first();
+    if (!post) return Response.json({ error: '日记不存在' }, { status: 404 });
   }
 
   const result = await env.DB.prepare(

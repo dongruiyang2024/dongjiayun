@@ -9,8 +9,18 @@ export async function onRequest(context) {
     return new Response(null, { status: 204, headers: CORS_HEADERS });
   }
 
-  const response = await context.next();
+  let response;
+  try {
+    if (!context.env.DB) {
+      return Response.json({ error: '数据服务尚未配置，请稍后再试' }, { status: 503 });
+    }
+    response = await context.next();
+  } catch (error) {
+    console.error('API request failed:', error);
+    response = Response.json({ error: '数据服务暂时不可用，请稍后再试' }, { status: 503 });
+  }
   const newResponse = new Response(response.body, response);
   Object.entries(CORS_HEADERS).forEach(([k, v]) => newResponse.headers.set(k, v));
+  newResponse.headers.set('Cache-Control', 'no-store');
   return newResponse;
 }

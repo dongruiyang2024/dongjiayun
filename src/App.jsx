@@ -1,5 +1,5 @@
 import { Component, lazy, Suspense } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useParams } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -9,6 +9,15 @@ import Growth from './pages/Growth';
 import Guestbook from './pages/Guestbook';
 import About from './pages/About';
 import Admin from './pages/Admin';
+import GardenProvider from './components/GardenProvider';
+import Projects from './pages/Projects';
+import Project from './pages/Project';
+import Pet from './pages/Pet';
+
+function PostRoute() {
+  const { id } = useParams();
+  return <Post key={id} />;
+}
 
 const RocketLab = lazy(() => import('./pages/RocketLab'));
 
@@ -50,19 +59,22 @@ function RocketRoute() {
 
 function BlogLayout() {
   return (
-    <>
+    <GardenProvider>
       <Header />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/diary" element={<Diary />} />
-        <Route path="/diary/:id" element={<Post />} />
+        <Route path="/diary/:id" element={<PostRoute />} />
+        <Route path="/projects" element={<Projects />} />
+        <Route path="/projects/:id" element={<Project />} />
+        <Route path="/pet" element={<Pet />} />
         <Route path="/growth" element={<Growth />} />
         <Route path="/guestbook" element={<Guestbook />} />
         <Route path="/about" element={<About />} />
         <Route path="/admin" element={<Admin />} />
       </Routes>
       <Footer />
-    </>
+    </GardenProvider>
   );
 }
 
