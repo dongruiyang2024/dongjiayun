@@ -6,10 +6,7 @@
     {
       "binding": "DB",
       "database_name": "dongjiayun-db",
-      "database_id": "REPLACE_WITH_YOUR_DATABASE_ID"
+      "database_id": "950fa173-5520-484f-b725-73237c7fd034"
     }
-  ],
-  "vars": {
-    "ADMIN_KEY": "REPLACE_WITH_YOUR_ADMIN_KEY"
-  }
+  ]
 }
